@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotorTo — Магазин авто запчастей</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface2: #1a1a1a;
+            --accent: #e63946;
+            --accent-glow: #ff4757;
+            --gold: #d4a853;
+            --text: #e0e0e0;
+            --text-dim: #999;
+            --white: #ffffff;
+            --card-bg: #161616;
+            --border: #222;
+            --radius: 20px;
+            --radius-sm: 12px;
+            --transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--bg);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            cursor: default;
+        }
+
+        /* ============ CUSTOM CURSOR ============ */
+        .cursor {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--accent-glow);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            transition: transform 0.08s ease-out, border-color 0.3s;
+            mix-blend-mode: difference;
+            display: none;
+        }
+        .cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-glow);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            transition: transform 0.04s ease-out;
+            display: none;
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .cursor,
+            .cursor-dot {
+                display: block;
+            }
+        }
+        .cursor.hover {
+            transform: scale(2.2);
+            border-color: var(--gold);
+            background: rgba(255, 71, 87, 0.08);
+        }
+        .cursor-dot.hover {
+            transform: scale(0.4);
+            background: var(--gold);
+        }
+
+        /* ============ PRELOADER ============ */
+        .preloader {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        .preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .preloader-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-glow);
+            border-right-color: var(--accent-glow);
+            animation: preloaderSpin 0.8s linear infinite;
+            position: relative;
+        }
+        .preloader-ring::after {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-bottom-color: var(--gold);
+            border-left-color: var(--gold);
+            animation: preloaderSpin 1.2s linear infinite reverse;
+        }
+        @keyframes preloaderSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ============ NAVBAR ============ */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 1300px;
+            z-index: 1000;
+            background: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 60px;
+            padding: 14px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+        }
+        .navbar.scrolled {
+            top: 8px;
+            width: 95%;
+            padding: 10px 28px;
+            background: rgba(10, 10, 10, 0.9);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+            color: #fff;
+            text-decoration: none;
+        }
+        .nav-logo .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            animation: logoPulse 2s ease-in-out infinite;
+            box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+        }
+        @keyframes logoPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 45px rgba(230, 57, 70, 0.9), 0 0 70px rgba(255, 71, 87, 0.4);
+            }
+        }
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 8px;
+        }
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.35s ease;
+            letter-spacing: 0.3px;
+        }
+        .nav-links a:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .nav-links a.active {
+            color: #fff;
+            background: var(--accent);
+            box-shadow: 0 4px 20px rgba(230, 57, 70, 0.4);
+        }
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            position: relative;
+        }
+        .btn-icon:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+            transform: scale(1.05);
+        }
+        .btn-icon .badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 18px;
+            height: 18px;
+            background: var(--gold);
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            animation: badgeBounce 2s ease-in-out infinite;
+        }
+        @keyframes badgeBounce {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-6px);
+            }
+            50% {
+                transform: translateY(0);
+            }
+            70% {
+                transform: translateY(-3px);
+            }
+        }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            z-index: 1001;
+            padding: 5px;
+        }
+        .hamburger span {
+            width: 26px;
+            height: 2.5px;
+            background: #fff;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        @media (max-width: 900px) {
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 280px;
+                height: 100vh;
+                background: rgba(10, 10, 10, 0.97);
+                backdrop-filter: blur(30px);
+                flex-direction: column;
+                padding: 100px 30px 40px;
+                gap: 5px;
+                transition: right 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+                border-left: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .nav-links.open {
+                right: 0;
+            }
+            .hamburger {
+                display: flex;
+            }
+            .nav-links a {
+                padding: 14px 20px;
+                font-size: 1rem;
+            }
+            .navbar {
+                padding: 12px 20px;
+                border-radius: 40px;
+            }
+        }
+
+        /* ============ SHOP HEADER ============ */
+        .shop-header {
+            padding: 150px 30px 40px;
+            max-width: 1300px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .shop-header .shop-badge {
+            display: inline-block;
+            padding: 8px 22px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            backdrop-filter: blur(6px);
+            background: rgba(255, 255, 255, 0.03);
+            animation: fadeInUp 0.8s ease forwards;
+            color: var(--accent-glow);
+        }
+        .shop-header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin-bottom: 12px;
+            animation: fadeInUp 0.8s ease 0.15s forwards;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        .shop-header h1 .accent {
+            background: linear-gradient(135deg, var(--accent-glow), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .shop-header .shop-subtitle {
+            color: #999;
+            font-size: 1rem;
+            animation: fadeInUp 0.8s ease 0.3s forwards;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============ FILTER BAR ============ */
+        .filter-bar {
+            max-width: 1300px;
+            margin: 0 auto 40px;
+            padding: 0 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            position: sticky;
+            top: 110px;
+            z-index: 50;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 16px 24px;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            transition: all 0.4s;
+        }
+        .filter-btn {
+            padding: 10px 22px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: transparent;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.35s ease;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+            font-family: inherit;
+        }
+        .filter-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .filter-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(230, 57, 70, 0.4);
+        }
+        .filter-count {
+            color: #777;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+
+        /* ============ PRODUCT GRID ============ */
+        .shop-section {
+            padding: 20px 30px 80px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        .product-grid-shop {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 22px;
+        }
+        .product-card-shop {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+        .product-card-shop:hover {
+            transform: translateY(-12px);
+            border-color: rgba(230, 57, 70, 0.5);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(230, 57, 70, 0.1);
+            z-index: 2;
+        }
+        .product-card-shop .product-img-wrap {
+            height: 200px;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .product-card-shop .product-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+        }
+        .product-card-shop:hover .product-img-wrap img {
+            transform: scale(1.1);
+        }
+        .product-card-shop .product-img-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 50%);
+            pointer-events: none;
+        }
+        .product-card-shop .product-tag {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: var(--accent);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            z-index: 2;
+            animation: tagGlow 2s ease-in-out infinite;
+        }
+        @keyframes tagGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(230, 57, 70, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(230, 57, 70, 0.9);
+            }
+        }
+        .product-card-shop .product-tag.limited {
+            background: #d4a853;
+            color: #000;
+            animation: tagGlowGold 2s ease-in-out infinite;
+        }
+        @keyframes tagGlowGold {
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(212, 168, 83, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(212, 168, 83, 0.9);
+            }
+        }
+        .product-card-shop .product-fav {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9rem;
+            z-index: 2;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        .product-card-shop .product-fav:hover {
+            background: var(--accent);
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(230, 57, 70, 0.6);
+        }
+        .product-card-shop .product-fav.liked {
+            background: var(--accent);
+        }
+        .product-card-shop .product-info-shop {
+            padding: 18px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .product-card-shop .product-category {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent-glow);
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .product-card-shop h4 {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        .product-card-shop .brand {
+            font-size: 0.78rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .product-card-shop .price-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+        .product-card-shop .price {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent-glow);
+        }
+        .product-card-shop .old-price {
+            font-size: 0.8rem;
+            color: #666;
+            text-decoration: line-through;
+        }
+        .product-card-shop .rating {
+            color: #d4a853;
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+        .product-card-shop .add-to-cart {
+            margin-top: 12px;
+            width: 100%;
+            padding: 11px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            transition: all 0.35s ease;
+            font-family: inherit;
+        }
+        .product-card-shop .add-to-cart:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 8px 25px rgba(230, 57, 70, 0.4);
+            transform: translateY(-2px);
+        }
+        .product-card-shop .add-to-cart.added {
+            background: #2ecc71;
+            border-color: #2ecc71;
+            animation: addedPulse 0.5s ease;
+        }
+        @keyframes addedPulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        /* ============ LOAD MORE ============ */
+        .load-more-wrap {
+            text-align: center;
+            margin-top: 40px;
+        }
+        .btn-load-more {
+            padding: 14px 40px;
+            border-radius: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            transition: all 0.4s ease;
+            font-family: inherit;
+        }
+        .btn-load-more:hover {
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 10px 35px rgba(255, 255, 255, 0.06);
+            transform: translateY(-3px);
+        }
+
+        /* ============ CART TOAST ============ */
+        .cart-toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--surface2);
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 16px 24px;
+            z-index: 10000;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(230, 57, 70, 0.2);
+            transform: translateX(120%);
+            transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .cart-toast.show {
+            transform: translateX(0);
+        }
+
+        /* ============ FOOTER ============ */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 60px 30px 30px;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 40px;
+            max-width: 1300px;
+            margin: 0 auto 40px;
+        }
+        .footer-col h4 {
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+        .footer-col a {
+            display: block;
+            color: #777;
+            text-decoration: none;
+            margin-bottom: 10px;
+            transition: color 0.3s, transform 0.3s;
+            font-size: 0.9rem;
+        }
+        .footer-col a:hover {
+            color: var(--accent-glow);
+            transform: translateX(6px);
+        }
+        .footer-bottom {
+            text-align: center;
+            color: #555;
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            padding-top: 30px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* ============ REVEAL ON SCROLL ============ */
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 600px) {
+            .shop-header {
+                padding: 120px 16px 30px;
+            }
+            .shop-header h1 {
+                font-size: 2rem;
+            }
+            .shop-section {
+                padding: 10px 12px 60px;
+            }
+            .product-grid-shop {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 12px;
+            }
+            .product-card-shop .product-img-wrap {
+                height: 150px;
+            }
+            .product-card-shop .product-info-shop {
+                padding: 12px;
+            }
+            .product-card-shop h4 {
+                font-size: 0.85rem;
+            }
+            .product-card-shop .price {
+                font-size: 1rem;
+            }
+            .filter-bar {
+                padding: 10px 14px;
+                gap: 6px;
+                border-radius: 30px;
+                top: 90px;
+            }
+            .filter-btn {
+                padding: 7px 14px;
+                font-size: 0.72rem;
+            }
+            .cart-toast {
+                bottom: 16px;
+                right: 16px;
+                left: 16px;
+                text-align: center;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-ring"></div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-dot" id="cursorDot"></div>
+
+    <!-- Cart Toast -->
+    <div class="cart-toast" id="cartToast">
+        ✅ <span id="cartToastMsg">Товар добавлен в корзину</span>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="logo-icon">⚙️</div>
+            MotorTo
+        </a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html">Главная</a></li>
+            <li><a href="page.html" class="active">Магазин</a></li>
+            <li><a href="index.html#categories">Каталог</a></li>
+            <li><a href="index.html#featured">Хиты</a></li>
+            <li><a href="index.html#cta">Контакты</a></li>
+        </ul>
+        <div class="nav-actions">
+            <button class="btn-icon" aria-label="Поиск">🔍</button>
+            <button class="btn-icon" aria-label="Корзина" id="cartIconBtn">
+                🛒<span class="badge" id="cartBadge">0</span>
+            </button>
+            <div class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Shop Header -->
+    <section class="shop-header">
+        <div class="shop-badge">🛒 Полный каталог</div>
+        <h1>Магазин <span class="accent">MotorTo</span></h1>
+        <p class="shop-subtitle">50+ товаров в наличии • Быстрая доставка • Гарантия качества</p>
+    </section>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar" id="filterBar">
+        <button class="filter-btn active" data-filter="all">Все товары <span class="filter-count">50</span></button>
+        <button class="filter-btn" data-filter="engine">🔧 Двигатель</button>
+        <button class="filter-btn" data-filter="brakes">🛑 Тормоза</button>
+        <button class="filter-btn" data-filter="wheels">🛞 Колёса</button>
+        <button class="filter-btn" data-filter="exhaust">💨 Выхлоп</button>
+        <button class="filter-btn" data-filter="electrical">⚡ Электрика</button>
+        <button class="filter-btn" data-filter="suspension">🔩 Подвеска</button>
+        <button class="filter-btn" data-filter="filters">🔍 Фильтры</button>
+        <button class="filter-btn" data-filter="optics">💡 Оптика</button>
+    </div>
+
+    <!-- Product Grid -->
+    <section class="shop-section">
+        <div class="product-grid-shop" id="productGrid">
+            <!-- Products will be injected by JavaScript -->
+        </div>
+        <div class="load-more-wrap" id="loadMoreWrap">
+            <button class="btn-load-more" id="btnLoadMore">⬇ Показать ещё</button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>MotorTo</h4>
+                <a href="#">О компании</a>
+                <a href="#">Вакансии</a>
+                <a href="#">Новости</a>
+            </div>
+            <div class="footer-col">
+                <h4>Клиентам</h4>
+                <a href="#">Доставка</a>
+                <a href="#">Возврат</a>
+                <a href="#">Гарантия</a>
+            </div>
+            <div class="footer-col">
+                <h4>Каталог</h4>
+                <a href="#">Двигатель</a>
+                <a href="#">Ходовая</a>
+                <a href="#">Кузов</a>
+            </div>
+            <div class="footer-col">
+                <h4>Контакты</h4>
+                <a href="#">+7 (999) 123-45-67</a>
+                <a href="#">info@motor.to</a>
+                <a href="#">Москва, ул. Автомобильная, 1</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 MotorTo. Все права защищены. Сделано с ❤️ для настоящих драйверов.
+        </div>
+    </footer>
+
+    <script>
+        // ============ PRELOADER ============
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('preloader').classList.add('hidden');
+            }, 600);
+        });
+
+        // ============ CUSTOM CURSOR ============
+        const cursor = document.getElementById('cursor');
+        const cursorDot = document.getElementById('cursorDot');
+        let mouseX = 0,
+            mouseY = 0;
+        let cursorX = 0,
+            cursorY = 0;
+        let dotX = 0,
+            dotY = 0;
+        document.addEventListener('mousemove', (e) => { mouseX = e.clientX;
+            mouseY = e.clientY; });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.15;
+            cursorY += (mouseY - cursorY) * 0.15;
+            dotX += (mouseX - dotX) * 0.35;
+            dotY += (mouseY - dotY) * 0.35;
+            if (cursor) { cursor.style.left = cursorX - 11 + 'px';
+                cursor.style.top = cursorY - 11 + 'px'; }
+            if (cursorDot) { cursorDot.style.left = dotX - 3 + 'px';
+                cursorDot.style.top = dotY - 3 + 'px'; }
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+        document.querySelectorAll('a, button, .btn-icon, .product-card-shop, .filter-btn, .hamburger').forEach(el => {
+            el.addEventListener('mouseenter', () => { cursor?.classList.add('hover');
+                cursorDot?.classList.add('hover'); });
+            el.addEventListener('mouseleave', () => { cursor?.classList.remove('hover');
+                cursorDot?.classList.remove('hover'); });
+        });
+
+        // ============ NAVBAR ============
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('navLinks');
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navLinks.classList.toggle('open');
+        });
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navLinks.classList.remove('open');
+            });
+        });
+
+        // ============ PRODUCT DATA (50 items) ============
+        const imagePool = {
+            engine: [
+                'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=400&h=300&fit=crop',
+            ],
+            brakes: [
+                'https://images.unsplash.com/photo-1600712242805-5f78671b24da?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1580137189272-c9379f8864fd?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop',
+            ],
+            wheels: [
+                'https://images.unsplash.com/photo-1600712242805-5f78671b24da?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&h=300&fit=crop',
+            ],
+            exhaust: [
+                'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&h=300&fit=crop',
+            ],
+            electrical: [
+                'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=400&h=300&fit=crop',
+            ],
+            suspension: [
+                'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1600712242805-5f78671b24da?w=400&h=300&fit=crop',
+            ],
+            filters: [
+                'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&h=300&fit=crop',
+            ],
+            optics: [
+                'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&h=300&fit=crop',
+                'https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=400&h=300&fit=crop',
+            ],
+        };
+
+        const products = [
+            // ENGINE (10)
+            { id: 1, name: 'Поршень кованый Wiseco', brand: 'Wiseco USA', category: 'engine',
+                catLabel: 'Двигатель', price: 12500, oldPrice: 15800, rating: 4.8, tag: 'Хит',
+                tagClass: '', imgIdx: 0 },
+            { id: 2, name: 'Турбокомпрессор Garrett GTX3076R', brand: 'Garrett USA', category: 'engine',
+                catLabel: 'Двигатель', price: 89500, oldPrice: null, rating: 5.0, tag: 'New', tagClass: '',
+                imgIdx: 1 },
+            { id: 3, name: 'Прокладка ГБЦ металлическая', brand: 'Cometic USA', category: 'engine',
+                catLabel: 'Двигатель', price: 4200, oldPrice: 5100, rating: 4.6, tag: '-18%', tagClass: '',
+                imgIdx: 2 },
+            { id: 4, name: 'Коленвал кованый Eagle', brand: 'Eagle USA', category: 'engine', catLabel: 'Двигатель',
+                price: 67500, oldPrice: null, rating: 4.9, tag: 'Премиум', tagClass: 'limited', imgIdx: 3 },
+            { id: 5, name: 'Распредвал HKS 272°', brand: 'HKS Japan', category: 'engine', catLabel: 'Двигатель',
+                price: 32000, oldPrice: 38000, rating: 4.7, tag: '-16%', tagClass: '', imgIdx: 4 },
+            { id: 6, name: 'Шатуны Carrillo H-Beam', brand: 'Carrillo USA', category: 'engine', catLabel: 'Двигатель',
+                price: 45000, oldPrice: null, rating: 4.9, tag: 'Топ', tagClass: '', imgIdx: 0 },
+            { id: 7, name: 'Масляный насос Tomei', brand: 'Tomei Japan', category: 'engine', catLabel: 'Двигатель',
+                price: 18500, oldPrice: 22000, rating: 4.5, tag: '-16%', tagClass: '', imgIdx: 1 },
+            { id: 8, name: 'Клапаны Supertech +1мм', brand: 'Supertech USA', category: 'engine', catLabel: 'Двигатель',
+                price: 9800, oldPrice: null, rating: 4.6, tag: '', tagClass: '', imgIdx: 2 },
+            { id: 9, name: 'Вкладыши коренные ACL Race', brand: 'ACL Australia', category: 'engine',
+                catLabel: 'Двигатель', price: 5600, oldPrice: 6800, rating: 4.4, tag: '-18%', tagClass: '', imgIdx: 3 },
+            { id: 10, name: 'Интеркулер Mishimoto', brand: 'Mishimoto USA', category: 'engine', catLabel: 'Двигатель',
+                price: 28000, oldPrice: null, rating: 4.7, tag: 'New', tagClass: '', imgIdx: 4 },
+
+            // BRAKES (8)
+            { id: 11, name: 'Тормозные колодки Brembo Sport', brand: 'Brembo Italy', category: 'brakes',
+                catLabel: 'Тормоза', price: 6200, oldPrice: 7300, rating: 4.7, tag: '-15%', tagClass: '', imgIdx: 0 },
+            { id: 12, name: 'Тормозной диск DBA 4000', brand: 'DBA Australia', category: 'brakes', catLabel: 'Тормоза',
+                price: 14500, oldPrice: null, rating: 4.8, tag: 'Хит', tagClass: '', imgIdx: 1 },
+            { id: 13, name: 'Суппорт AP Racing 6-порш.', brand: 'AP Racing UK', category: 'brakes', catLabel: 'Тормоза',
+                price: 78000, oldPrice: 92000, rating: 5.0, tag: '-15%', tagClass: 'limited', imgIdx: 2 },
+            { id: 14, name: 'Тормозная жидкость Motul RBF660', brand: 'Motul France', category: 'brakes',
+                catLabel: 'Тормоза', price: 1800, oldPrice: null, rating: 4.9, tag: '', tagClass: '', imgIdx: 3 },
+            { id: 15, name: 'Армированные шланги Goodridge', brand: 'Goodridge UK', category: 'brakes',
+                catLabel: 'Тормоза', price: 8500, oldPrice: 9900, rating: 4.5, tag: '-14%', tagClass: '', imgIdx: 0 },
+            { id: 16, name: 'Колодки EBC Yellowstuff', brand: 'EBC UK', category: 'brakes', catLabel: 'Тормоза',
+                price: 5400, oldPrice: null, rating: 4.6, tag: 'New', tagClass: '', imgIdx: 1 },
+            { id: 17, name: 'Тормозной диск Zimmermann', brand: 'Zimmermann Germany', category: 'brakes',
+                catLabel: 'Тормоза', price: 9800, oldPrice: 11500, rating: 4.4, tag: '-15%', tagClass: '', imgIdx: 2 },
+            { id: 18, name: 'Суппорт задний Brembo', brand: 'Brembo Italy', category: 'brakes', catLabel: 'Тормоза',
+                price: 35000, oldPrice: null, rating: 4.7, tag: '', tagClass: '', imgIdx: 3 },
+
+            // WHEELS (8)
+            { id: 19, name: 'Диск BBS XR 18x8.5', brand: 'BBS Germany', category: 'wheels', catLabel: 'Колёса',
+                price: 24990, oldPrice: 35700, rating: 4.9, tag: '-30%', tagClass: '', imgIdx: 0 },
+            { id: 20, name: 'Диск Enkei RPF1 17x9', brand: 'Enkei Japan', category: 'wheels', catLabel: 'Колёса',
+                price: 19500, oldPrice: null, rating: 4.8, tag: 'Лёгкий', tagClass: '', imgIdx: 1 },
+            { id: 21, name: 'Шина Michelin Pilot Sport 4S', brand: 'Michelin France', category: 'wheels',
+                catLabel: 'Колёса', price: 16800, oldPrice: 19500, rating: 4.9, tag: '-14%', tagClass: '', imgIdx: 2 },
+            { id: 22, name: 'Диск RAYS Volk TE37', brand: 'RAYS Japan', category: 'wheels', catLabel: 'Колёса',
+                price: 52000, oldPrice: null, rating: 5.0, tag: 'JDM', tagClass: 'limited', imgIdx: 3 },
+            { id: 23, name: 'Шина Pirelli P Zero', brand: 'Pirelli Italy', category: 'wheels', catLabel: 'Колёса',
+                price: 14200, oldPrice: 16800, rating: 4.7, tag: '-15%', tagClass: '', imgIdx: 0 },
+            { id: 24, name: 'Диск OZ Racing Ultraleggera', brand: 'OZ Racing Italy', category: 'wheels',
+                catLabel: 'Колёса', price: 28500, oldPrice: null, rating: 4.8, tag: '', tagClass: '', imgIdx: 1 },
+            { id: 25, name: 'Шина Toyo R888R 265/35R18', brand: 'Toyo Japan', category: 'wheels', catLabel: 'Колёса',
+                price: 15800, oldPrice: 18200, rating: 4.6, tag: 'Track', tagClass: '', imgIdx: 2 },
+            { id: 26, name: 'Проставки H&R 20мм', brand: 'H&R Germany', category: 'wheels', catLabel: 'Колёса',
+                price: 6500, oldPrice: null, rating: 4.5, tag: '', tagClass: '', imgIdx: 3 },
+
+            // EXHAUST (6)
+            { id: 27, name: 'Глушитель Akrapovic Evolution', brand: 'Akrapovic Slovenia', category: 'exhaust',
+                catLabel: 'Выхлоп', price: 112000, oldPrice: null, rating: 5.0, tag: 'Топ', tagClass: 'limited',
+                imgIdx: 0 },
+            { id: 28, name: 'Даунпайп HKS 3"', brand: 'HKS Japan', category: 'exhaust', catLabel: 'Выхлоп',
+                price: 24000, oldPrice: 28500, rating: 4.6, tag: '-16%', tagClass: '', imgIdx: 1 },
+            { id: 29, name: 'Катализатор MagnaFlow 200cel', brand: 'MagnaFlow USA', category: 'exhaust',
+                catLabel: 'Выхлоп', price: 18500, oldPrice: null, rating: 4.5, tag: '', tagClass: '', imgIdx: 2 },
+            { id: 30, name: 'Коллектор Invidia Equal Length', brand: 'Invidia USA', category: 'exhaust',
+                catLabel: 'Выхлоп', price: 32000, oldPrice: 37000, rating: 4.7, tag: '-14%', tagClass: '', imgIdx: 0 },
+            { id: 31, name: 'Выхлопная система Borla ATAK', brand: 'Borla USA', category: 'exhaust',
+                catLabel: 'Выхлоп', price: 65000, oldPrice: null, rating: 4.8, tag: 'New', tagClass: '', imgIdx: 1 },
+            { id: 32, name: 'Наконечник выхлопной трубы', brand: 'Akrapovic Slovenia', category: 'exhaust',
+                catLabel: 'Выхлоп', price: 8500, oldPrice: 9900, rating: 4.4, tag: '-14%', tagClass: '', imgIdx: 2 },
+
+            // ELECTRICAL (6)
+            { id: 33, name: 'Стартер Denso High-Torque', brand: 'Denso Japan', category: 'electrical',
+                catLabel: 'Электрика', price: 12500, oldPrice: null, rating: 4.7, tag: '', tagClass: '', imgIdx: 0 },
+            { id: 34, name: 'Генератор Bosch 140A', brand: 'Bosch Germany', category: 'electrical',
+                catLabel: 'Электрика', price: 18500, oldPrice: 21000, rating: 4.8, tag: '-12%', tagClass: '',
+            imgIdx: 1 },
+            { id: 35, name: 'АКБ Optima Yellow Top', brand: 'Optima USA', category: 'electrical',
+                catLabel: 'Электрика', price: 22000, oldPrice: null, rating: 4.9, tag: 'AGM', tagClass: 'limited',
+                imgIdx: 2 },
+            { id: 36, name: 'Катушки зажигания MSD Blaster', brand: 'MSD USA', category: 'electrical',
+                catLabel: 'Электрика', price: 8500, oldPrice: 9900, rating: 4.5, tag: '-14%', tagClass: '', imgIdx: 0 },
+            { id: 37, name: 'ЭБУ AEM EMS-4', brand: 'AEM USA', category: 'electrical', catLabel: 'Электрика',
+                price: 42000, oldPrice: null, rating: 4.6, tag: 'New', tagClass: '', imgIdx: 1 },
+            { id: 38, name: 'Датчик широкополосный AEM X-Series', brand: 'AEM USA', category: 'electrical',
+                catLabel: 'Электрика', price: 6500, oldPrice: 7800, rating: 4.4, tag: '-17%', tagClass: '', imgIdx: 2 },
+
+            // SUSPENSION (6)
+            { id: 39, name: 'Койловеры KW Variant 3', brand: 'KW Germany', category: 'suspension',
+                catLabel: 'Подвеска', price: 95000, oldPrice: null, rating: 4.9, tag: 'Премиум', tagClass: 'limited',
+                imgIdx: 0 },
+            { id: 40, name: 'Стабилизатор поперечный Eibach', brand: 'Eibach Germany', category: 'suspension',
+                catLabel: 'Подвеска', price: 12500, oldPrice: 14800, rating: 4.6, tag: '-16%', tagClass: '', imgIdx: 1 },
+            { id: 41, name: 'Рычаг нижний Megan Racing', brand: 'Megan Racing USA', category: 'suspension',
+                catLabel: 'Подвеска', price: 8500, oldPrice: null, rating: 4.4, tag: '', tagClass: '', imgIdx: 2 },
+            { id: 42, name: 'Сайлентблоки полиуретан', brand: 'Energy Suspension USA', category: 'suspension',
+                catLabel: 'Подвеска', price: 3800, oldPrice: 4500, rating: 4.3, tag: '-16%', tagClass: '', imgIdx: 0 },
+            { id: 43, name: 'Амортизаторы Bilstein B8', brand: 'Bilstein Germany', category: 'suspension',
+                catLabel: 'Подвеска', price: 45000, oldPrice: null, rating: 4.8, tag: 'Хит', tagClass: '', imgIdx: 1 },
+            { id: 44, name: 'Пружины H&R Sport -35мм', brand: 'H&R Germany', category: 'suspension',
+                catLabel: 'Подвеска', price: 16500, oldPrice: 19000, rating: 4.7, tag: '-13%', tagClass: '', imgIdx: 2 },
+
+            // FILTERS (6)
+            { id: 45, name: 'Воздушный фильтр K&N High-Flow', brand: 'K&N USA', category: 'filters',
+                catLabel: 'Фильтры', price: 3200, oldPrice: null, rating: 4.6, tag: '', tagClass: '', imgIdx: 0 },
+            { id: 46, name: 'Масляный фильтр HKS Super', brand: 'HKS Japan', category: 'filters', catLabel: 'Фильтры',
+                price: 1800, oldPrice: 2100, rating: 4.5, tag: '-14%', tagClass: '', imgIdx: 1 },
+            { id: 47, name: 'Топливный фильтр AEM', brand: 'AEM USA', category: 'filters', catLabel: 'Фильтры',
+                price: 2400, oldPrice: null, rating: 4.4, tag: '', tagClass: '', imgIdx: 0 },
+            { id: 48, name: 'Нулевик HKS Super Power Flow', brand: 'HKS Japan', category: 'filters',
+                catLabel: 'Фильтры', price: 9500, oldPrice: 11200, rating: 4.7, tag: '-15%', tagClass: '', imgIdx: 1 },
+            { id: 49, name: 'Масляный фильтр TRD Sports', brand: 'TRD Japan', category: 'filters', catLabel: 'Фильтры',
+                price: 1500, oldPrice: null, rating: 4.3, tag: '', tagClass: '', imgIdx: 0 },
+            { id: 50, name: 'Воздушный фильтр Cosworth', brand: 'Cosworth UK', category: 'filters',
+                catLabel: 'Фильтры', price: 4100, oldPrice: 4800, rating: 4.5, tag: '-15%', tagClass: '', imgIdx: 1 },
+
+            // OPTICS (bonus items to round out - actually we have 50 already, but let's add 2 more for optics)
+            { id: 51, name: 'LED-лампа Philips X-tremeUltinon', brand: 'Philips Netherlands', category: 'optics',
+                catLabel: 'Оптика', price: 4200, oldPrice: null, rating: 4.5, tag: 'LED', tagClass: '', imgIdx: 0 },
+            { id: 52, name: 'Фара противотуманная Hella', brand: 'Hella Germany', category: 'optics',
+                catLabel: 'Оптика', price: 5800, oldPrice: 6800, rating: 4.4, tag: '-15%', tagClass: '', imgIdx: 1 },
+        ];
+
+        // Trim to exactly 50
+        const allProducts = products.slice(0, 50);
+
+        let cartCount = 0;
+        let visibleCount = 12;
+        const productsPerLoad = 12;
+        let currentFilter = 'all';
+
+        const productGrid = document.getElementById('productGrid');
+        const loadMoreWrap = document.getElementById('loadMoreWrap');
+        const btnLoadMore = document.getElementById('btnLoadMore');
+        const cartBadge = document.getElementById('cartBadge');
+        const cartToast = document.getElementById('cartToast');
+        const cartToastMsg = document.getElementById('cartToastMsg');
+        const filterBtns = document.querySelectorAll('.filter-btn');
+
+        function getImageUrl(product) {
+            const pool = imagePool[product.category] || imagePool['engine'];
+            const idx = (product.imgIdx !== undefined ? product.imgIdx : product.id) % pool.length;
+            return pool[idx];
+        }
+
+        function getFilteredProducts() {
+            if (currentFilter === 'all') return allProducts;
+            return allProducts.filter(p => p.category === currentFilter);
+        }
+
+        function renderProductCard(product, index) {
+            const card = document.createElement('div');
+            card.className = 'product-card-shop reveal';
+            card.setAttribute('data-category', product.category);
+            card.style.transitionDelay = (index % productsPerLoad) * 0.04 + 's';
+
+            const imgUrl = getImageUrl(product);
+
+            card.innerHTML = `
+            <div class="product-img-wrap">
+              <img src="${imgUrl}" 
+                   alt="${product.name}" 
+                   loading="lazy"
+                   onerror="this.style.display='none';this.parentElement.style.background='radial-gradient(circle at 50% 50%, #2a2a2a, #111)';this.parentElement.innerHTML+='<span style=font-size:4rem;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)>🔧</span>'">
+              <div class="product-img-overlay"></div>
+              ${product.tag ? `<span class="product-tag ${product.tagClass}">${product.tag}</span>` : ''}
+              <button class="product-fav" data-id="${product.id}" aria-label="В избранное">♡</button>
+            </div>
+            <div class="product-info-shop">
+              <span class="product-category">${product.catLabel}</span>
+              <h4>${product.name}</h4>
+              <span class="brand">${product.brand}</span>
+              <div class="price-row">
+                <span class="price">${product.price.toLocaleString('ru-RU')} ₽</span>
+                ${product.oldPrice ? `<span class="old-price">${product.oldPrice.toLocaleString('ru-RU')} ₽</span>` : ''}
+              </div>
+              <div class="rating">${'★'.repeat(Math.floor(product.rating))}${product.rating % 1 >= 0.5 ? '½' : ''} ${product.rating}</div>
+              <button class="add-to-cart" data-id="${product.id}" data-name="${product.name}">🛒 В корзину</button>
+            </div>
+          `;
+
+            // Add to cart handler
+            card.querySelector('.add-to-cart').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const btn = this;
+                if (!btn.classList.contains('added')) {
+                    btn.classList.add('added');
+                    btn.textContent = '✅ Добавлено';
+                    cartCount++;
+                    cartBadge.textContent = cartCount;
+                    cartBadge.style.transform = 'scale(1.5)';
+                    setTimeout(() => { cartBadge.style.transform = 'scale(1)'; }, 200);
+                    showToast(product.name);
+                    setTimeout(() => {
+                        btn.classList.remove('added');
+                        btn.textContent = '🛒 В корзину';
+                    }, 2000);
+                }
+            });
+
+            // Fav handler
+            card.querySelector('.product-fav').addEventListener('click', function(e) {
+                e.stopPropagation();
+                const fav = this;
+                if (fav.classList.contains('liked')) {
+                    fav.classList.remove('liked');
+                    fav.textContent = '♡';
+                } else {
+                    fav.classList.add('liked');
+                    fav.textContent = '❤️';
+                    fav.style.transform = 'scale(1.3)';
+                    setTimeout(() => { fav.style.transform = 'scale(1)'; }, 200);
+                }
+            });
+
+            return card;
+        }
+
+        function showToast(productName) {
+            cartToastMsg.textContent = `${productName} добавлен в корзину`;
+            cartToast.classList.add('show');
+            clearTimeout(cartToast._timeout);
+            cartToast._timeout = setTimeout(() => {
+                cartToast.classList.remove('show');
+            }, 2500);
+        }
+
+        function renderProducts(append = false) {
+            if (!append) {
+                productGrid.innerHTML = '';
+                visibleCount = productsPerLoad;
+            }
+            const filtered = getFilteredProducts();
+            const toRender = filtered.slice(append ? 0 : 0, visibleCount);
+
+            if (!append) {
+                productGrid.innerHTML = '';
+                const slice = filtered.slice(0, visibleCount);
+                slice.forEach((p, i) => {
+                    productGrid.appendChild(renderProductCard(p, i));
+                });
+            } else {
+                const currentCount = productGrid.children.length;
+                const slice = filtered.slice(currentCount, visibleCount);
+                slice.forEach((p, i) => {
+                    productGrid.appendChild(renderProductCard(p, currentCount + i));
+                });
+            }
+
+            // Update load more button
+            if (visibleCount >= filtered.length) {
+                loadMoreWrap.style.display = 'none';
+            } else {
+                loadMoreWrap.style.display = 'block';
+            }
+
+            // Reveal animation
+            setTimeout(() => {
+                document.querySelectorAll('.product-card-shop.reveal').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight) {
+                        el.classList.add('visible');
+                    }
+                });
+            }, 50);
+        }
+
+        // Intersection Observer for reveal
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -20px 0px' });
+
+        // Observe dynamically added cards
+        const mutationObserver = new MutationObserver(() => {
+            document.querySelectorAll('.product-card-shop.reveal:not(.visible)').forEach(el => {
+                revealObserver.observe(el);
+            });
+        });
+        mutationObserver.observe(productGrid, { childList: true, subtree: true });
+
+        // Initial observe
+        document.querySelectorAll('.product-card-shop.reveal').forEach(el => revealObserver.observe(el));
+
+        // Load more
+        btnLoadMore.addEventListener('click', () => {
+            visibleCount += productsPerLoad;
+            renderProducts(true);
+            // Smooth scroll to new items
+            const lastCard = productGrid.children[productGrid.children.length - 1];
+            if (lastCard) {
+                lastCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+
+        // Filter buttons
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.getAttribute('data-filter');
+                visibleCount = productsPerLoad;
+                // Update filter count
+                const filtered = getFilteredProducts();
+                const allFilterBtn = document.querySelector('.filter-btn[data-filter="all"] .filter-count');
+                if (allFilterBtn) allFilterBtn.textContent = allProducts.length;
+                renderProducts(false);
+                productGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        // Initial render
+        renderProducts(false);
+
+        // ============ CART ICON CLICK ============
+        document.getElementById('cartIconBtn').addEventListener('click', () => {
+            if (cartCount === 0) {
+                showToast('Корзина пока пуста');
+            } else {
+                showToast(`В корзине ${cartCount} товар(ов) на сумму ...`);
+            }
+        });
+
+        // ============ SMOOTH SCROLL FOR ANCHORS ============
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return;
+                e.preventDefault();
+                const target = document.querySelector(href);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        console.log('🚗 MotorTo Магазин — 50 товаров загружено! Все анимации активны.');
+    </script>
+</body>
+</html>
