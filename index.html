@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MotorTo — Премиум авто запчасти</title>
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface2: #1a1a1a;
+            --accent: #e63946;
+            --accent-glow: #ff4757;
+            --gold: #d4a853;
+            --text: #e0e0e0;
+            --text-dim: #999;
+            --white: #ffffff;
+            --card-bg: #161616;
+            --border: #222;
+            --radius: 20px;
+            --radius-sm: 12px;
+            --transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--bg);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border-radius: 10px;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            cursor: default;
+        }
+
+        /* ============ CUSTOM CURSOR ============ */
+        .cursor {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--accent-glow);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            transition: transform 0.08s ease-out, border-color 0.3s;
+            mix-blend-mode: difference;
+            display: none;
+        }
+        .cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-glow);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            transition: transform 0.04s ease-out;
+            display: none;
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .cursor,
+            .cursor-dot {
+                display: block;
+            }
+        }
+        .cursor.hover {
+            transform: scale(2.2);
+            border-color: var(--gold);
+            background: rgba(255, 71, 87, 0.08);
+        }
+        .cursor-dot.hover {
+            transform: scale(0.4);
+            background: var(--gold);
+        }
+
+        /* ============ PRELOADER ============ */
+        .preloader {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 100000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.7s ease, visibility 0.7s ease;
+        }
+        .preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .preloader-ring {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent-glow);
+            border-right-color: var(--accent-glow);
+            animation: preloaderSpin 0.8s linear infinite;
+            position: relative;
+        }
+        .preloader-ring::after {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-bottom-color: var(--gold);
+            border-left-color: var(--gold);
+            animation: preloaderSpin 1.2s linear infinite reverse;
+        }
+        .preloader-piston {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-glow);
+            border-radius: 50%;
+            animation: pistonBounce 0.6s ease-in-out infinite alternate;
+            box-shadow: 0 0 20px var(--accent-glow), 0 0 40px var(--accent);
+        }
+        @keyframes preloaderSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        @keyframes pistonBounce {
+            from {
+                transform: translateY(-20px);
+                opacity: 0.5;
+            }
+            to {
+                transform: translateY(20px);
+                opacity: 1;
+            }
+        }
+
+        /* ============ NAVBAR ============ */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 92%;
+            max-width: 1300px;
+            z-index: 1000;
+            background: rgba(18, 18, 18, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 60px;
+            padding: 14px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+        }
+        .navbar.scrolled {
+            top: 8px;
+            width: 95%;
+            padding: 10px 28px;
+            background: rgba(10, 10, 10, 0.9);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.14);
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+            color: #fff;
+            text-decoration: none;
+            position: relative;
+        }
+        .nav-logo .logo-icon {
+            width: 38px;
+            height: 38px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            animation: logoPulse 2s ease-in-out infinite;
+            box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+        }
+        @keyframes logoPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 45px rgba(230, 57, 70, 0.9), 0 0 70px rgba(255, 71, 87, 0.4);
+            }
+        }
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 8px;
+        }
+        .nav-links a {
+            color: #ccc;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.35s ease;
+            position: relative;
+            letter-spacing: 0.3px;
+        }
+        .nav-links a:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .nav-links a.active {
+            color: #fff;
+            background: var(--accent);
+            box-shadow: 0 4px 20px rgba(230, 57, 70, 0.4);
+        }
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            position: relative;
+        }
+        .btn-icon:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 25px rgba(230, 57, 70, 0.5);
+            transform: scale(1.05);
+        }
+        .btn-icon .badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 18px;
+            height: 18px;
+            background: var(--gold);
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            animation: badgeBounce 2s ease-in-out infinite;
+        }
+        @keyframes badgeBounce {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-6px);
+            }
+            50% {
+                transform: translateY(0);
+            }
+            70% {
+                transform: translateY(-3px);
+            }
+        }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            z-index: 1001;
+            padding: 5px;
+        }
+        .hamburger span {
+            width: 26px;
+            height: 2.5px;
+            background: #fff;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        @media (max-width: 900px) {
+            .nav-links {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 280px;
+                height: 100vh;
+                background: rgba(10, 10, 10, 0.97);
+                backdrop-filter: blur(30px);
+                flex-direction: column;
+                padding: 100px 30px 40px;
+                gap: 5px;
+                transition: right 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+                border-left: 1px solid rgba(255, 255, 255, 0.08);
+            }
+            .nav-links.open {
+                right: 0;
+            }
+            .hamburger {
+                display: flex;
+            }
+            .nav-links a {
+                padding: 14px 20px;
+                font-size: 1rem;
+            }
+            .navbar {
+                padding: 12px 20px;
+                border-radius: 40px;
+            }
+        }
+
+        /* ============ HERO ============ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 120px 30px 60px;
+        }
+        .hero-bg-particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--accent-glow);
+            animation: floatUp linear infinite;
+            opacity: 0;
+        }
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) scale(1.8);
+                opacity: 0;
+            }
+        }
+        .hero-glow {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            border-radius: 50%;
+            filter: blur(180px);
+            opacity: 0.25;
+            pointer-events: none;
+        }
+        .hero-glow.red {
+            background: var(--accent);
+            top: -200px;
+            right: -150px;
+            animation: glowDrift 8s ease-in-out infinite;
+        }
+        .hero-glow.blue {
+            background: #3a6fff;
+            bottom: -200px;
+            left: -150px;
+            animation: glowDrift 10s ease-in-out infinite reverse;
+        }
+        @keyframes glowDrift {
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(60px, -40px) scale(1.2);
+            }
+            66% {
+                transform: translate(-30px, 50px) scale(0.85);
+            }
+        }
+        .hero-content {
+            display: flex;
+            align-items: center;
+            gap: 60px;
+            max-width: 1300px;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+        .hero-text {
+            flex: 1;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.85rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            animation: fadeInUp 0.8s ease forwards;
+            backdrop-filter: blur(6px);
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .hero-text h1 {
+            font-size: clamp(3rem, 6vw, 5rem);
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            animation: fadeInUp 0.8s ease 0.15s forwards;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        .hero-text h1 .accent {
+            background: linear-gradient(135deg, var(--accent-glow), var(--gold));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-text p {
+            font-size: 1.15rem;
+            color: #aaa;
+            max-width: 480px;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.8s ease 0.3s forwards;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        .hero-btns {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease 0.45s forwards;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        .btn {
+            padding: 15px 32px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            letter-spacing: 0.3px;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 8px 35px rgba(230, 57, 70, 0.4);
+        }
+        .btn-primary:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 50px rgba(230, 57, 70, 0.6);
+            background: #ff4d5a;
+        }
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 53px;
+            background: linear-gradient(135deg, var(--accent-glow), transparent, var(--gold));
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        .btn-primary:hover::after {
+            opacity: 0.7;
+        }
+        .btn-outline {
+            background: transparent;
+            color: #fff;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .btn-outline:hover {
+            border-color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(255, 255, 255, 0.08);
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ============ 3D WHEEL ============ */
+        .hero-wheel-container {
+            flex: 0 0 420px;
+            perspective: 1000px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeInUp 1s ease 0.3s forwards;
+            opacity: 0;
+            animation-fill-mode: forwards;
+        }
+        .wheel-scene {
+            width: 380px;
+            height: 380px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: wheelFloat 5s ease-in-out infinite, wheelSpin3D 18s linear infinite;
+        }
+        @keyframes wheelFloat {
+            0%,
+            100% {
+                transform: translateY(0) rotateY(0) rotateX(15deg);
+            }
+            25% {
+                transform: translateY(-25px) rotateY(10deg) rotateX(18deg);
+            }
+            50% {
+                transform: translateY(-8px) rotateY(-5deg) rotateX(12deg);
+            }
+            75% {
+                transform: translateY(-30px) rotateY(8deg) rotateX(20deg);
+            }
+        }
+        @keyframes wheelSpin3D {
+            from {
+                transform: rotateZ(0deg);
+            }
+            to {
+                transform: rotateZ(360deg);
+            }
+        }
+        .wheel-scene {
+            animation: wheelFloat 5s ease-in-out infinite;
+        }
+        .wheel-3d {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            animation: spinWheel 20s linear infinite;
+            transform-style: preserve-3d;
+        }
+        @keyframes spinWheel {
+            to {
+                transform: rotateZ(360deg);
+            }
+        }
+        .wheel-rim {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 14px solid #2a2a2a;
+            box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(212, 168, 83, 0.3),
+                0 0 80px rgba(230, 57, 70, 0.2);
+            background: radial-gradient(circle at 50% 50%, #1a1a1a 30%, #0d0d0d 70%);
+        }
+        .wheel-rim::after {
+            content: '';
+            position: absolute;
+            inset: 20px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+        }
+        .wheel-spokes {
+            position: absolute;
+            inset: 40px;
+            border-radius: 50%;
+        }
+        .wheel-spoke {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 6px;
+            height: 45%;
+            background: linear-gradient(to bottom, #d4a853, #8b6914, #d4a853);
+            transform-origin: top center;
+            border-radius: 3px;
+            box-shadow: 0 0 12px rgba(212, 168, 83, 0.5);
+        }
+        .wheel-spoke:nth-child(1) {
+            transform: translate(-50%, -100%) rotate(0deg);
+        }
+        .wheel-spoke:nth-child(2) {
+            transform: translate(-50%, -100%) rotate(60deg);
+        }
+        .wheel-spoke:nth-child(3) {
+            transform: translate(-50%, -100%) rotate(120deg);
+        }
+        .wheel-spoke:nth-child(4) {
+            transform: translate(-50%, -100%) rotate(180deg);
+        }
+        .wheel-spoke:nth-child(5) {
+            transform: translate(-50%, -100%) rotate(240deg);
+        }
+        .wheel-spoke:nth-child(6) {
+            transform: translate(-50%, -100%) rotate(300deg);
+        }
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, #555, #1a1a1a);
+            box-shadow: 0 0 30px rgba(212, 168, 83, 0.6), inset 0 0 15px rgba(0, 0, 0, 0.8);
+            border: 4px solid #444;
+            z-index: 2;
+        }
+        .wheel-center::after {
+            content: '⚡';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            animation: zapPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes zapPulse {
+            0%,
+            100% {
+                text-shadow: 0 0 10px #d4a853;
+            }
+            50% {
+                text-shadow: 0 0 30px #ff4757, 0 0 60px #d4a853;
+            }
+        }
+        .wheel-bolts {
+            position: absolute;
+            inset: 14px;
+            border-radius: 50%;
+        }
+        .wheel-bolt {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #888;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+        }
+        .wheel-bolt:nth-child(1) {
+            transform: translate(-50%, -50%) rotate(0deg) translateY(-140px);
+        }
+        .wheel-bolt:nth-child(2) {
+            transform: translate(-50%, -50%) rotate(72deg) translateY(-140px);
+        }
+        .wheel-bolt:nth-child(3) {
+            transform: translate(-50%, -50%) rotate(144deg) translateY(-140px);
+        }
+        .wheel-bolt:nth-child(4) {
+            transform: translate(-50%, -50%) rotate(216deg) translateY(-140px);
+        }
+        .wheel-bolt:nth-child(5) {
+            transform: translate(-50%, -50%) rotate(288deg) translateY(-140px);
+        }
+
+        @media (max-width: 1000px) {
+            .hero-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 40px;
+            }
+            .hero-text p {
+                margin: 0 auto 32px;
+            }
+            .hero-btns {
+                justify-content: center;
+            }
+            .hero-wheel-container {
+                flex: 0 0 auto;
+            }
+            .wheel-scene {
+                width: 260px;
+                height: 260px;
+            }
+            .wheel-rim {
+                border-width: 10px;
+            }
+            .wheel-center {
+                width: 50px;
+                height: 50px;
+            }
+            .wheel-bolt {
+                width: 7px;
+                height: 7px;
+            }
+            .wheel-bolt:nth-child(1) {
+                transform: translate(-50%, -50%) rotate(0deg) translateY(-95px);
+            }
+            .wheel-bolt:nth-child(2) {
+                transform: translate(-50%, -50%) rotate(72deg) translateY(-95px);
+            }
+            .wheel-bolt:nth-child(3) {
+                transform: translate(-50%, -50%) rotate(144deg) translateY(-95px);
+            }
+            .wheel-bolt:nth-child(4) {
+                transform: translate(-50%, -50%) rotate(216deg) translateY(-95px);
+            }
+            .wheel-bolt:nth-child(5) {
+                transform: translate(-50%, -50%) rotate(288deg) translateY(-95px);
+            }
+        }
+
+        /* ============ SECTION TITLES ============ */
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        .section-header .subtitle {
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent-glow);
+            margin-bottom: 16px;
+        }
+        .section-header h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .section-header h2 .accent {
+            color: var(--accent-glow);
+        }
+
+        /* ============ CATEGORIES ============ */
+        .categories {
+            padding: 100px 30px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .cat-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 35px 25px;
+            text-align: center;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            perspective: 800px;
+        }
+        .cat-card:hover {
+            transform: translateY(-14px) rotateX(4deg) rotateY(-3deg);
+            border-color: var(--accent);
+            box-shadow: 0 30px 60px rgba(230, 57, 70, 0.2), 0 0 80px rgba(212, 168, 83, 0.08);
+        }
+        .cat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 0%, rgba(230, 57, 70, 0.15), transparent 70%);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .cat-card:hover::before {
+            opacity: 1;
+        }
+        .cat-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+            transition: transform 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            filter: drop-shadow(0 0 10px rgba(212, 168, 83, 0.3));
+        }
+        .cat-card:hover .cat-icon {
+            transform: scale(1.2) translateY(-10px);
+            filter: drop-shadow(0 0 25px rgba(230, 57, 70, 0.6));
+        }
+        .cat-card h3 {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            transition: color 0.3s;
+        }
+        .cat-card:hover h3 {
+            color: var(--accent-glow);
+        }
+        .cat-card p {
+            font-size: 0.8rem;
+            color: #777;
+        }
+        .cat-card .cat-shine {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+            animation: shineRotate 8s linear infinite;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .cat-card:hover .cat-shine {
+            opacity: 1;
+        }
+        @keyframes shineRotate {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ============ FEATURED PRODUCTS ============ */
+        .featured {
+            padding: 100px 30px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 28px;
+        }
+        .product-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            position: relative;
+            cursor: pointer;
+        }
+        .product-card:hover {
+            transform: translateY(-16px);
+            border-color: rgba(230, 57, 70, 0.5);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.5), 0 0 50px rgba(230, 57, 70, 0.12);
+        }
+        .product-img-wrap {
+            height: 240px;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .product-img-wrap .product-emoji {
+            font-size: 6rem;
+            transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5));
+        }
+        .product-card:hover .product-emoji {
+            transform: scale(1.15) rotate(-8deg);
+        }
+        .product-tag {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: var(--accent);
+            color: #fff;
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            z-index: 2;
+            animation: tagGlow 2s ease-in-out infinite;
+        }
+        @keyframes tagGlow {
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(230, 57, 70, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(230, 57, 70, 0.9);
+            }
+        }
+        .product-fav {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1rem;
+            z-index: 2;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(6px);
+        }
+        .product-fav:hover {
+            background: var(--accent);
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(230, 57, 70, 0.6);
+        }
+        .product-info {
+            padding: 22px;
+        }
+        .product-info h4 {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+        }
+        .product-info .brand {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .product-info .price-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .product-info .price {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--accent-glow);
+        }
+        .product-info .old-price {
+            font-size: 0.9rem;
+            color: #666;
+            text-decoration: line-through;
+        }
+        .product-info .rating {
+            color: #d4a853;
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+
+        /* ============ STATS ============ */
+        .stats-section {
+            padding: 80px 30px;
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .stats-section::before {
+            content: '';
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: var(--accent);
+            border-radius: 50%;
+            filter: blur(200px);
+            opacity: 0.08;
+            top: -100px;
+            left: -100px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        .stat-item .stat-number {
+            font-size: 3.5rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, #fff, var(--accent-glow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-item .stat-label {
+            color: #999;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ============ BRANDS MARQUEE ============ */
+        .brands-marquee {
+            padding: 60px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+        }
+        .brands-track {
+            display: inline-flex;
+            gap: 60px;
+            animation: marqueeScroll 25s linear infinite;
+            align-items: center;
+        }
+        .brands-track span {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #333;
+            transition: color 0.4s;
+            cursor: default;
+            filter: grayscale(100%);
+            transition: all 0.4s;
+        }
+        .brands-track span:hover {
+            color: #fff;
+            filter: grayscale(0%);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.4);
+        }
+        @keyframes marqueeScroll {
+            from {
+                transform: translateX(0);
+            }
+            to {
+                transform: translateX(-50%);
+            }
+        }
+        .brands-marquee::after,
+        .brands-marquee::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 150px;
+            z-index: 2;
+            pointer-events: none;
+        }
+        .brands-marquee::before {
+            left: 0;
+            background: linear-gradient(to right, var(--bg), transparent);
+        }
+        .brands-marquee::after {
+            right: 0;
+            background: linear-gradient(to left, var(--bg), transparent);
+        }
+
+        /* ============ CTA ============ */
+        .cta-section {
+            padding: 100px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-card {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--surface2);
+            border-radius: 30px;
+            padding: 60px 40px;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-card::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 32px;
+            background: linear-gradient(135deg, var(--accent), transparent 40%, var(--gold), transparent 70%);
+            z-index: -1;
+            opacity: 0.4;
+            animation: borderGlow 4s ease-in-out infinite;
+        }
+        @keyframes borderGlow {
+            0%,
+            100% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+        .cta-card h2 {
+            font-size: 2.4rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+        }
+        .cta-card p {
+            color: #999;
+            margin-bottom: 30px;
+        }
+        .cta-card .btn {
+            font-size: 1rem;
+            padding: 16px 40px;
+        }
+
+        /* ============ FOOTER ============ */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 60px 30px 30px;
+        }
+        .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 40px;
+            max-width: 1300px;
+            margin: 0 auto 40px;
+        }
+        .footer-col h4 {
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+        .footer-col a {
+            display: block;
+            color: #777;
+            text-decoration: none;
+            margin-bottom: 10px;
+            transition: color 0.3s, transform 0.3s;
+            font-size: 0.9rem;
+        }
+        .footer-col a:hover {
+            color: var(--accent-glow);
+            transform: translateX(6px);
+        }
+        .footer-bottom {
+            text-align: center;
+            color: #555;
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            padding-top: 30px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* ============ REVEAL ON SCROLL ============ */
+        .reveal {
+            opacity: 0;
+            transform: translateY(60px);
+            transition: all 0.9s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .reveal-delay-1 {
+            transition-delay: 0.15s;
+        }
+        .reveal-delay-2 {
+            transition-delay: 0.3s;
+        }
+        .reveal-delay-3 {
+            transition-delay: 0.45s;
+        }
+        .reveal-delay-4 {
+            transition-delay: 0.6s;
+        }
+
+        @media (max-width: 600px) {
+            .hero {
+                padding: 100px 16px 40px;
+            }
+            .hero-text h1 {
+                font-size: 2.4rem;
+            }
+            .categories,
+            .featured {
+                padding: 60px 16px;
+            }
+            .cta-card {
+                padding: 40px 20px;
+            }
+            .cta-card h2 {
+                font-size: 1.6rem;
+            }
+            .navbar {
+                width: 95%;
+                padding: 10px 16px;
+                border-radius: 30px;
+                top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Preloader -->
+    <div class="preloader" id="preloader">
+        <div class="preloader-ring">
+            <div class="preloader-piston"></div>
+        </div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-dot" id="cursorDot"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="nav-logo">
+            <div class="logo-icon">⚙️</div>
+            MotorTo
+        </a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#home" class="active">Главная</a></li>
+            <li><a href="#categories">Каталог</a></li>
+            <li><a href="#featured">Хиты</a></li>
+            <li><a href="#stats">О нас</a></li>
+            <li><a href="#cta">Контакты</a></li>
+        </ul>
+        <div class="nav-actions">
+            <button class="btn-icon" aria-label="Поиск">🔍</button>
+            <button class="btn-icon" aria-label="Корзина">
+                🛒<span class="badge">3</span>
+            </button>
+            <div class="hamburger" id="hamburger">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero" id="home">
+        <div class="hero-bg-particles" id="particlesContainer"></div>
+        <div class="hero-glow red"></div>
+        <div class="hero-glow blue"></div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-badge">⚡ Премиум качество</div>
+                <h1>Запчасти с<br><span class="accent">характером</span></h1>
+                <p>От тормозных колодок до турбокомпрессоров — всё для тех, кто живёт драйвом. Быстрая доставка, честные цены, проверенные бренды.</p>
+                <div class="hero-btns">
+                    <a href="#categories" class="btn btn-primary">🔧 Смотреть каталог</a>
+                    <a href="#cta" class="btn btn-outline">📞 Связаться</a>
+                </div>
+            </div>
+            <div class="hero-wheel-container">
+                <div class="wheel-scene">
+                    <div class="wheel-3d">
+                        <div class="wheel-rim">
+                            <div class="wheel-spokes">
+                                <div class="wheel-spoke"></div>
+                                <div class="wheel-spoke"></div>
+                                <div class="wheel-spoke"></div>
+                                <div class="wheel-spoke"></div>
+                                <div class="wheel-spoke"></div>
+                                <div class="wheel-spoke"></div>
+                            </div>
+                            <div class="wheel-bolts">
+                                <div class="wheel-bolt"></div>
+                                <div class="wheel-bolt"></div>
+                                <div class="wheel-bolt"></div>
+                                <div class="wheel-bolt"></div>
+                                <div class="wheel-bolt"></div>
+                            </div>
+                            <div class="wheel-center"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="categories" id="categories">
+        <div class="section-header reveal">
+            <span class="subtitle">Что ищете?</span>
+            <h2>Популярные <span class="accent">категории</span></h2>
+        </div>
+        <div class="cat-grid">
+            <div class="cat-card reveal reveal-delay-1">
+                <div class="cat-shine"></div>
+                <span class="cat-icon">🛞</span>
+                <h3>Колёса & Диски</h3>
+                <p>Литые, кованые, штампованные</p>
+            </div>
+            <div class="cat-card reveal reveal-delay-2">
+                <div class="cat-shine"></div>
+                <span class="cat-icon">🔧</span>
+                <h3>Двигатель</h3>
+                <p>Поршни, клапаны, прокладки</p>
+            </div>
+            <div class="cat-card reveal reveal-delay-3">
+                <div class="cat-shine"></div>
+                <span class="cat-icon">🛑</span>
+                <h3>Тормозная система</h3>
+                <p>Колодки, диски, суппорты</p>
+            </div>
+            <div class="cat-card reveal reveal-delay-4">
+                <div class="cat-shine"></div>
+                <span class="cat-icon">💨</span>
+                <h3>Выхлоп</h3>
+                <p>Глушители, катализаторы</p>
+            </div>
+            <div class="cat-card reveal reveal-delay-1">
+                <div class="cat-shine"></div>
+                <span class="cat-icon">⚡</span>
+                <h3>Электрика</h3>
+                <p>Стартеры, генераторы, АКБ</p>
+            </div>
+            <div class="cat-card reveal reveal-delay-2">
+                <div class="cat-shine"></div>
+                <span class="cat-icon">💡</span>
+                <h3>Оптика</h3>
+                <p>Фары, LED-лампы, противотуманки</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="featured" id="featured">
+        <div class="section-header reveal">
+            <span class="subtitle">Топ продаж</span>
+            <h2>Горячие <span class="accent">предложения</span></h2>
+        </div>
+        <div class="product-grid">
+            <div class="product-card reveal reveal-delay-1">
+                <div class="product-img-wrap">
+                    <span class="product-emoji">🛞</span>
+                    <span class="product-tag">-30%</span>
+                    <button class="product-fav">♡</button>
+                </div>
+                <div class="product-info">
+                    <h4>Диск R18 BBS XR</h4>
+                    <p class="brand">BBS Germany</p>
+                    <div class="price-row">
+                        <span class="price">24 990 ₽</span>
+                        <span class="old-price">35 700 ₽</span>
+                    </div>
+                    <div class="rating">★★★★★ 4.9</div>
+                </div>
+            </div>
+            <div class="product-card reveal reveal-delay-2">
+                <div class="product-img-wrap">
+                    <span class="product-emoji">🔧</span>
+                    <span class="product-tag">Хит</span>
+                    <button class="product-fav">♡</button>
+                </div>
+                <div class="product-info">
+                    <h4>Турбокомпрессор Garrett GTX</h4>
+                    <p class="brand">Garrett USA</p>
+                    <div class="price-row">
+                        <span class="price">89 500 ₽</span>
+                    </div>
+                    <div class="rating">★★★★★ 5.0</div>
+                </div>
+            </div>
+            <div class="product-card reveal reveal-delay-3">
+                <div class="product-img-wrap">
+                    <span class="product-emoji">🛑</span>
+                    <span class="product-tag">-15%</span>
+                    <button class="product-fav">♡</button>
+                </div>
+                <div class="product-info">
+                    <h4>Тормозные колодки Brembo</h4>
+                    <p class="brand">Brembo Italy</p>
+                    <div class="price-row">
+                        <span class="price">6 200 ₽</span>
+                        <span class="old-price">7 300 ₽</span>
+                    </div>
+                    <div class="rating">★★★★☆ 4.7</div>
+                </div>
+            </div>
+            <div class="product-card reveal reveal-delay-4">
+                <div class="product-img-wrap">
+                    <span class="product-emoji">💨</span>
+                    <span class="product-tag">New</span>
+                    <button class="product-fav">♡</button>
+                </div>
+                <div class="product-info">
+                    <h4>Спортивный глушитель Akrapovic</h4>
+                    <p class="brand">Akrapovic Slovenia</p>
+                    <div class="price-row">
+                        <span class="price">112 000 ₽</span>
+                    </div>
+                    <div class="rating">★★★★★ 4.8</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats-section" id="stats">
+        <div class="stats-grid">
+            <div class="stat-item reveal">
+                <div class="stat-number" data-count="15000">0</div>
+                <div class="stat-label">Довольных клиентов</div>
+            </div>
+            <div class="stat-item reveal reveal-delay-1">
+                <div class="stat-number" data-count="50000">0</div>
+                <div class="stat-label">Запчастей на складе</div>
+            </div>
+            <div class="stat-item reveal reveal-delay-2">
+                <div class="stat-number" data-count="350">0</div>
+                <div class="stat-label">Брендов-партнёров</div>
+            </div>
+            <div class="stat-item reveal reveal-delay-3">
+                <div class="stat-number" data-count="24">0</div>
+                <div class="stat-label">Часа — доставка</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Brands Marquee -->
+    <div class="brands-marquee">
+        <div class="brands-track" id="brandsTrack">
+            <span>BOSCH</span><span>BREMBO</span><span>GARRETT</span><span>BBS</span><span>AKRAPOVIC</span>
+            <span>BILSTEIN</span><span>H&R</span><span>EIBACH</span><span>RECARO</span><span>MOMO</span>
+            <span>BOSCH</span><span>BREMBO</span><span>GARRETT</span><span>BBS</span><span>AKRAPOVIC</span>
+            <span>BILSTEIN</span><span>H&R</span><span>EIBACH</span><span>RECARO</span><span>MOMO</span>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <section class="cta-section" id="cta">
+        <div class="cta-card reveal">
+            <h2>Готовы к <span style="color:var(--accent-glow);">апгрейду?</span></h2>
+            <p>Оставьте заявку, и мы подберём идеальные запчасти для вашего автомобиля. Персональный менеджер свяжется в течение 15 минут.</p>
+            <a href="#" class="btn btn-primary">🚀 Оставить заявку</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4>MotorTo</h4>
+                <a href="#">О компании</a>
+                <a href="#">Вакансии</a>
+                <a href="#">Новости</a>
+            </div>
+            <div class="footer-col">
+                <h4>Клиентам</h4>
+                <a href="#">Доставка</a>
+                <a href="#">Возврат</a>
+                <a href="#">Гарантия</a>
+            </div>
+            <div class="footer-col">
+                <h4>Каталог</h4>
+                <a href="#">Двигатель</a>
+                <a href="#">Ходовая</a>
+                <a href="#">Кузов</a>
+            </div>
+            <div class="footer-col">
+                <h4>Контакты</h4>
+                <a href="#">+7 (999) 123-45-67</a>
+                <a href="#">info@motor.to</a>
+                <a href="#">Москва, ул. Автомобильная, 1</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2026 MotorTo. Все права защищены. Сделано с ❤️ для настоящих драйверов.
+        </div>
+    </footer>
+
+    <script>
+        // ============ PRELOADER ============
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('preloader').classList.add('hidden');
+            }, 800);
+        });
+
+        // ============ CUSTOM CURSOR ============
+        const cursor = document.getElementById('cursor');
+        const cursorDot = document.getElementById('cursorDot');
+        let mouseX = 0,
+            mouseY = 0;
+        let cursorX = 0,
+            cursorY = 0;
+        let dotX = 0,
+            dotY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.15;
+            cursorY += (mouseY - cursorY) * 0.15;
+            dotX += (mouseX - dotX) * 0.35;
+            dotY += (mouseY - dotY) * 0.35;
+
+            if (cursor) {
+                cursor.style.left = cursorX - 11 + 'px';
+                cursor.style.top = cursorY - 11 + 'px';
+            }
+            if (cursorDot) {
+                cursorDot.style.left = dotX - 3 + 'px';
+                cursorDot.style.top = dotY - 3 + 'px';
+            }
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // Hover effect on interactive elements
+        const hoverTargets = document.querySelectorAll(
+            'a, button, .btn, .cat-card, .product-card, .btn-icon, .hamburger');
+        hoverTargets.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                cursor?.classList.add('hover');
+                cursorDot?.classList.add('hover');
+            });
+            el.addEventListener('mouseleave', () => {
+                cursor?.classList.remove('hover');
+                cursorDot?.classList.remove('hover');
+            });
+        });
+
+        // ============ NAVBAR SCROLL ============
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // ============ MOBILE MENU ============
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('navLinks');
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navLinks.classList.toggle('open');
+        });
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                navLinks.classList.remove('open');
+            });
+        });
+
+        // Active nav link
+        const sections = document.querySelectorAll('section[id], .hero[id]');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const top = section.offsetTop - 150;
+                if (window.scrollY >= top) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navLinks.querySelectorAll('a').forEach(a => {
+                a.classList.remove('active');
+                if (a.getAttribute('href') === '#' + current) {
+                    a.classList.add('active');
+                }
+            });
+        });
+
+        // ============ PARTICLES ============
+        const particlesContainer = document.getElementById('particlesContainer');
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            const size = Math.random() * 4 + 2;
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDuration = Math.random() * 8 + 6 + 's';
+            particle.style.animationDelay = Math.random() * 5 + 's';
+            particle.style.background = Math.random() > 0.5 ? 'var(--accent-glow)' : '#d4a853';
+            particlesContainer.appendChild(particle);
+
+            particle.addEventListener('animationend', () => {
+                particle.remove();
+                createParticle();
+            });
+        }
+        for (let i = 0; i < 40; i++) {
+            setTimeout(createParticle, i * 200);
+        }
+
+        // ============ REVEAL ON SCROLL ============
+        const revealElements = document.querySelectorAll('.reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        revealElements.forEach(el => observer.observe(el));
+
+        // ============ COUNTER ANIMATION ============
+        const statNumbers = document.querySelectorAll('.stat-number');
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    const target = parseInt(el.getAttribute('data-count'));
+                    const duration = 2000;
+                    const startTime = performance.now();
+
+                    function updateCounter(timestamp) {
+                        const elapsed = timestamp - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        const eased = 1 - Math.pow(1 - progress, 3);
+                        const current = Math.floor(eased * target);
+                        el.textContent = current.toLocaleString('ru-RU') + (target >= 1000 ?
+                            '+' : '');
+                        if (progress < 1) {
+                            requestAnimationFrame(updateCounter);
+                        } else {
+                            el.textContent = target.toLocaleString('ru-RU') + (target >= 1000 ?
+                                '+' : target === 24 ? ' ч' : '');
+                        }
+                    }
+                    requestAnimationFrame(updateCounter);
+                    counterObserver.unobserve(el);
+                }
+            });
+        }, { threshold: 0.5 });
+        statNumbers.forEach(el => counterObserver.observe(el));
+
+        // ============ PRODUCT FAV TOGGLE ============
+        document.querySelectorAll('.product-fav').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                btn.textContent = btn.textContent === '♡' ? '❤️' : '♡';
+                btn.style.transform = 'scale(1.4)';
+                setTimeout(() => { btn.style.transform = 'scale(1)'; }, 200);
+            });
+        });
+
+        // ============ SMOOTH SCROLL FOR ALL ANCHOR LINKS ============
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // ============ PARALLAX ON HERO WHEEL (mouse move) ============
+        const wheelScene = document.querySelector('.wheel-scene');
+        document.addEventListener('mousemove', (e) => {
+            if (!wheelScene) return;
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * 20;
+            wheelScene.style.transform = `perspective(800px) rotateY(${x}deg) rotateX(${15 - y}deg)`;
+        });
+
+        console.log('🚗 MotorTo — сайт запущен! Все анимации активны.');
+    </script>
+</body>
+</html>
